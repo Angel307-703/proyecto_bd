@@ -1,20 +1,22 @@
 const mysql = require("mysql2");
 
-// Configuración de la conexión a MySql
+//Configuración de la conexión a MySQL
 const conexion = mysql.createConnection({
-host: "localhost",       // Servidor local
-user: "root",           // Usuario de MySQL (Por defecto en XAMPP)
-database: "tienda"     // Nombre de nuestra BD
+    port: 3306,
+    host: "localhost",      //Servidor local
+    user: "root",       //Usuario dde MySQL (por defecto en XAMPP)
+    database: "tienda"      //Nombre de nuestra BD
 });
 
-// Comprobar si la conexión fue exitosa
+//Comprobar si la conexión fue exitosa
 
-conexion.connect((error) =>{
+conexion.connect((error) => {
     if (error) {
-        console.error("Error al conectar con MYSQL:", error);
+        console.error("❌ Error al conectar con MySQL:" + error);
         return;
     }
-    console.log("Conexión exitosa con MYSQL");
+    console.log("✅ Conexión exitosa con MySQL")
 });
-// Exportar la conexión para poder usarla en otros archivos
+
+//Exportar la conexión para reutilizarla en la rutas del servidor
 module.exports = conexion;

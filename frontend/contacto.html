@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Tienda — Gestión de Contacto</title>
+
+  <!-- Fuente moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="contacto.css" />
+</head>
+
+<body>
+  <!-- ===== BARRA DE NAVEGACIÓN (NAVBAR) ===== -->
+  <header class="navbar">
+    <div class="contenedor nav-contenido">
+      <a href="index.html" class="logo"> Mi<strong>Tienda</strong></a>
+      <nav class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="index.html#productos">Productos</a>
+        <a href="contacto.html">Contacto</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <main class="contenedor">
+    <div class="encabezado-principal">
+      <h1>Centro de Mensajes de Contacto</h1>
+      <p>Panel de administración de mensajes conectado a MySQL y Express</p>
+    </div>
+
+    <div class="panel-tienda">
+      <!-- SECCIÓN 1: Formulario de Contacto (Crear / Editar) -->
+      <section class="tarjeta">
+        <h2 id="tituloFormulario">Enviar Mensaje</h2>
+
+        <form id="formularioContacto">
+          <!-- Campo oculto para almacenar el ID en caso de edición -->
+          <input type="hidden" id="contactoId" value="" />
+
+          <div class="campo">
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" placeholder="Escribe tu nombre" required />
+          </div>
+
+          <div class="campo">
+            <label for="correo">Correo electrónico:</label>
+            <input type="email" id="correo" placeholder="ejemplo@correo.com" required />
+          </div>
+
+          <div class="campo">
+            <label for="asunto">Asunto:</label>
+            <input type="text" id="asunto" placeholder="Ej: Consulta sobre un producto" required />
+          </div>
+
+          <div class="campo">
+            <label for="mensaje">Mensaje:</label>
+            <textarea id="mensaje" rows="4" placeholder="Escribe tu mensaje..." required></textarea>
+          </div>
+
+          <div class="acciones-form" style="margin-top: 15px;">
+            <button type="submit" id="btnGuardar" class="btn btn-guardar">Enviar Mensaje</button>
+            <button type="button" id="btnCancelar" class="btn btn-cancelar" style="display: none;">Cancelar</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- SECCIÓN 2: Lista de Mensajes -->
+      <section class="tarjeta">
+        <h2>Mensajes Recibidos</h2>
+        <div id="listaContactos" class="lista-productos">
+          <!-- Los mensajes se cargan dinámicamente -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===== PIE DE PÁGINA (FOOTER) ===== -->
+  <footer class="footer">
+    <div class="contenedor footer-contenido">
+      <p>&copy; 2026 Mi Tienda — Proyecto Formativo con Node.js, Express y MySQL.</p>
+    </div>
+  </footer>
+
+  <!-- Script CRUD de Contactos -->
+  <script>
+    const API_URL = 'http://localhost:3000';
+
+    const form = document.getElementById('formularioContacto');
+    const inputId = document.getElementById('contactoId');
+    const inputNombre = document.getElementById('nombre');
+    const inputCorreo = document.getElementById('correo');
+    const inputAsunto = document.getElementById('asunto');
+    const inputMensaje = document.getElementById('mensaje');
+    const tituloFormulario = document.getElementById('tituloFormulario');
+    const btnGuardar = document.getElementById('btnGuardar');
+    const btnCancelar = document.getElementById('btnCancelar');
+    const contenedorLista = document.getElementById('listaContactos');
+
+    document.addEventListener('DOMContentLoaded', cargarMensajes);
+
+    // 1. Obtener y mostrar mensajes (READ)
+    async function cargarMensajes() {
+      try {
+        const respuesta = await fetch(`${API_URL}/contactos`);
+        const contactos = await respuesta.json();
+
+        contenedorLista.innerHTML = '';
+
+        if (!contactos || contactos.length === 0) {
+          contenedorLista.innerHTML = '<p style="color: #64748b;">No hay mensajes registrados.</p>';
+          return;
+        }
+
+        contactos.forEach(c => {
+          const tarjeta = document.createElement('div');
+          tarjeta.className = 'producto';
+
+          tarjeta.innerHTML = `
+            <div>
+              <h3>${escapeHtml(c.asunto)}</h3>
+              <p><strong>De:</strong> ${escapeHtml(c.nombre)} (${escapeHtml(c.correo)})</p>
+              <p style="margin-top: 8px; color: #334155;">${escapeHtml(c.mensaje)}</p>
+              <small style="color: #94a3b8; display: block; margin-top: 8px;">
+                ${c.fecha ? new Date(c.fecha).toLocaleString('es-CO') : ''}
+              </small>
+            </div>
+            <div class="acciones" style="margin-top: 12px;">
+              <button class="btn-editar" onclick="prepararEdicion(${c.id}, '${escapeJs(c.nombre)}', '${escapeJs(c.correo)}', '${escapeJs(c.asunto)}', '${escapeJs(c.mensaje)}')">Editar</button>
+              <button class="btn-eliminar" onclick="eliminarMensaje(${c.id})">Eliminar</button>
+            </div>
+          `;
+
+          contenedorLista.appendChild(tarjeta);
+        });
+      } catch (error) {
+        console.error('Error al cargar mensajes:', error);
+        contenedorLista.innerHTML = '<p style="color: #dc2626;">Error al conectar con el servidor.</p>';
+      }
+    }
+
+    // 2. Guardar o Actualizar mensaje (CREATE / UPDATE)
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const id = inputId.value;
+      const datos = {
+        nombre: inputNombre.value.trim(),
+        correo: inputCorreo.value.trim(),
+        asunto: inputAsunto.value.trim(),
+        mensaje: inputMensaje.value.trim()
+      };
+
+      const esEdicion = Boolean(id);
+      const url = esEdicion ? `${API_URL}/contactos/${id}` : `${API_URL}/enviar-mensaje`;
+      const metodo = esEdicion ? 'PUT' : 'POST';
+
+      try {
+        const respuesta = await fetch(url, {
+          method: metodo,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (respuesta.ok && (resultado.exito || resultado.mensaje)) {
+          alert(esEdicion ? 'Mensaje actualizado con éxito' : 'Mensaje enviado con éxito');
+          limpiarFormulario();
+          cargarMensajes();
+        } else {
+          alert('Error: ' + (resultado.mensaje || 'No se pudo procesar la solicitud'));
+        }
+      } catch (error) {
+        console.error('Error de red:', error);
+        alert('No se pudo conectar con el servidor.');
+      }
+    });
+
+    // 3. Cargar datos en el formulario para editar
+    function prepararEdicion(id, nombre, correo, asunto, mensaje) {
+      inputId.value = id;
+      inputNombre.value = nombre;
+      inputCorreo.value = correo;
+      inputAsunto.value = asunto;
+      inputMensaje.value = mensaje;
+
+      tituloFormulario.textContent = 'Editar Mensaje';
+      btnGuardar.textContent = 'Actualizar Mensaje';
+      btnCancelar.style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Cancelar edición
+    btnCancelar.addEventListener('click', limpiarFormulario);
+
+    function limpiarFormulario() {
+      inputId.value = '';
+      form.reset();
+      tituloFormulario.textContent = 'Enviar Mensaje';
+      btnGuardar.textContent = 'Enviar Mensaje';
+      btnCancelar.style.display = 'none';
+    }
+
+    // 4. Eliminar mensaje (DELETE)
+    async function eliminarMensaje(id) {
+      if (!confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+
+      try {
+        const respuesta = await fetch(`${API_URL}/contactos/${id}`, {
+          method: 'DELETE'
+        });
+
+        const resultado = await respuesta.json();
+
+        if (respuesta.ok) {
+          alert('Mensaje eliminado correctamente');
+          cargarMensajes();
+        } else {
+          alert('Error: ' + resultado.mensaje);
+        }
+      } catch (error) {
+        console.error('Error al eliminar:', error);
+        alert('No se pudo conectar con el servidor.');
+      }
+    }
+
+    // Utilidades para escapar texto
+    function escapeHtml(texto) {
+      if (!texto) return '';
+      return texto
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(texto) {
+      if (!texto) return '';
+      return texto
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n");
+    }
+  </script>
+</body>
+
+</html>
