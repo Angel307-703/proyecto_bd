@@ -8,11 +8,12 @@
         "start": "node server.js"
     },
     "keywords": [],
-    "author": "Cristian Tunaroza",
+    "author": "Angel David Gomez",
     "license": "ISC",
     "type": "commonjs",
     "dependencies": {
         "cors": "^2.8.6",
+        "dotenv": "^18.0.8",
         "express": "^5.2.1",
         "mysql2": "^3.24.5",
         "nodemon": "^3.1.14"
