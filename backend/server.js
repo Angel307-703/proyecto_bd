@@ -85,16 +85,19 @@ app.delete("/productos/:id", (req, res) => {
 // ==========================================
 
 // 5. Registrar un nuevo mensaje de contacto (POST)
-app.post("/contacto", (req, res) => {
-  const { nombre, email, asunto, mensaje } = req.body;
+app.post(["/contacto", "/enviar-mensaje"], (req, res) => {
+  const { nombre, email, correo, asunto, mensaje } = req.body;
+  const correoContacto = email ?? correo;
 
   // Validación básica de campos requeridos
-  if (!nombre || !email || !asunto || !mensaje) {
+  if (![nombre, correoContacto, asunto, mensaje].every(
+    (campo) => typeof campo === "string" && campo.trim()
+  )) {
     return res.status(400).json({ mensaje: "Todos los campos son obligatorios" });
   }
 
   const sql = "INSERT INTO mensajes_contacto (nombre, email, asunto, mensaje) VALUES (?, ?, ?, ?)";
-  const valores = [nombre, email, asunto, mensaje];
+  const valores = [nombre.trim(), correoContacto.trim(), asunto.trim(), mensaje.trim()];
 
   conexion.query(sql, valores, (error, resultado) => {
     if (error) {
@@ -110,8 +113,12 @@ app.post("/contacto", (req, res) => {
 });
 
 // 6. Consultar todos los mensajes de contacto (GET)
-app.get("/contacto", (req, res) => {
-  const sql = "SELECT * FROM mensajes_contacto ORDER BY fecha_registro DESC";
+app.get(["/contacto", "/contactos"], (req, res) => {
+  const sql = `
+    SELECT *, email AS correo, fecha_registro AS fecha
+    FROM mensajes_contacto
+    ORDER BY fecha_registro DESC
+  `;
 
   conexion.query(sql, (error, resultados) => {
     if (error) {
@@ -122,8 +129,59 @@ app.get("/contacto", (req, res) => {
   });
 });
 
-// 7. Eliminar un mensaje de contacto (DELETE)
-app.delete("/contacto/:id", (req, res) => {
+// 7. Actualizar un mensaje de contacto (UPDATE)
+app.put(["/contacto/:id", "/contactos/:id"], (req, res) => {
+  const { nombre, email, correo, asunto, mensaje } = req.body;
+  const correoContacto = email ?? correo;
+
+  if (![nombre, correoContacto, asunto, mensaje].every(
+    (campo) => typeof campo === "string" && campo.trim()
+  )) {
+    return res.status(400).json({ mensaje: "Todos los campos son obligatorios" });
+  }
+
+  const sql = `
+    UPDATE mensajes_contacto
+    SET nombre = ?, email = ?, asunto = ?, mensaje = ?
+    WHERE id = ?
+  `;
+  const valores = [
+    nombre.trim(),
+    correoContacto.trim(),
+    asunto.trim(),
+    mensaje.trim(),
+    req.params.id,
+  ];
+
+  conexion.query(sql, valores, (error, resultado) => {
+    if (error) {
+      console.error("Error al actualizar mensaje de contacto:", error);
+      return res.status(500).json({ mensaje: "Error al actualizar el mensaje de contacto" });
+    }
+
+    if (resultado.affectedRows > 0) {
+      return res.json({ mensaje: "Mensaje actualizado correctamente" });
+    }
+
+    conexion.query(
+      "SELECT id FROM mensajes_contacto WHERE id = ?",
+      [req.params.id],
+      (errorConsulta, resultados) => {
+        if (errorConsulta) {
+          console.error("Error al verificar mensaje de contacto:", errorConsulta);
+          return res.status(500).json({ mensaje: "Error al actualizar el mensaje de contacto" });
+        }
+        if (resultados.length === 0) {
+          return res.status(404).json({ mensaje: "No se encontró el mensaje de contacto" });
+        }
+        res.json({ mensaje: "Mensaje actualizado correctamente" });
+      }
+    );
+  });
+});
+
+// 8. Eliminar un mensaje de contacto (DELETE)
+app.delete(["/contacto/:id", "/contactos/:id"], (req, res) => {
   const id = req.params.id;
   const sql = "DELETE FROM mensajes_contacto WHERE id = ?";
 
