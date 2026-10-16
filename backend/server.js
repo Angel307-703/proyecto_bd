@@ -96,7 +96,7 @@ app.post(["/contacto", "/enviar-mensaje"], (req, res) => {
     return res.status(400).json({ mensaje: "Todos los campos son obligatorios" });
   }
 
-  const sql = "INSERT INTO mensajes_contacto (nombre, email, asunto, mensaje) VALUES (?, ?, ?, ?)";
+  const sql = "INSERT INTO contactos (nombre, correo, asunto, mensaje) VALUES (?, ?, ?, ?)";
   const valores = [nombre.trim(), correoContacto.trim(), asunto.trim(), mensaje.trim()];
 
   conexion.query(sql, valores, (error, resultado) => {
@@ -114,11 +114,7 @@ app.post(["/contacto", "/enviar-mensaje"], (req, res) => {
 
 // 6. Consultar todos los mensajes de contacto (GET)
 app.get(["/contacto", "/contactos"], (req, res) => {
-  const sql = `
-    SELECT *, email AS correo, fecha_registro AS fecha
-    FROM mensajes_contacto
-    ORDER BY fecha_registro DESC
-  `;
+  const sql = "SELECT * FROM contactos ORDER BY fecha DESC";
 
   conexion.query(sql, (error, resultados) => {
     if (error) {
@@ -141,8 +137,8 @@ app.put(["/contacto/:id", "/contactos/:id"], (req, res) => {
   }
 
   const sql = `
-    UPDATE mensajes_contacto
-    SET nombre = ?, email = ?, asunto = ?, mensaje = ?
+    UPDATE contactos
+    SET nombre = ?, correo = ?, asunto = ?, mensaje = ?
     WHERE id = ?
   `;
   const valores = [
@@ -164,7 +160,7 @@ app.put(["/contacto/:id", "/contactos/:id"], (req, res) => {
     }
 
     conexion.query(
-      "SELECT id FROM mensajes_contacto WHERE id = ?",
+      "SELECT id FROM contactos WHERE id = ?",
       [req.params.id],
       (errorConsulta, resultados) => {
         if (errorConsulta) {
@@ -183,7 +179,7 @@ app.put(["/contacto/:id", "/contactos/:id"], (req, res) => {
 // 8. Eliminar un mensaje de contacto (DELETE)
 app.delete(["/contacto/:id", "/contactos/:id"], (req, res) => {
   const id = req.params.id;
-  const sql = "DELETE FROM mensajes_contacto WHERE id = ?";
+  const sql = "DELETE FROM contactos WHERE id = ?";
 
   conexion.query(sql, [id], (error, resultado) => {
     if (error) {

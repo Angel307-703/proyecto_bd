@@ -113,7 +113,15 @@
 
         contenedorLista.innerHTML = '';
 
-        if (!contactos || contactos.length === 0) {
+        if (!respuesta.ok) {
+          throw new Error(contactos.mensaje || `Error del servidor (${respuesta.status})`);
+        }
+
+        if (!Array.isArray(contactos)) {
+          throw new Error('El servidor devolvió una respuesta inesperada.');
+        }
+
+        if (contactos.length === 0) {
           contenedorLista.innerHTML = '<p style="color: #64748b;">No hay mensajes registrados.</p>';
           return;
         }
@@ -141,7 +149,10 @@
         });
       } catch (error) {
         console.error('Error al cargar mensajes:', error);
-        contenedorLista.innerHTML = '<p style="color: #dc2626;">Error al conectar con el servidor.</p>';
+        const aviso = document.createElement('p');
+        aviso.style.color = '#dc2626';
+        aviso.textContent = `No se pudieron cargar los mensajes: ${error.message}`;
+        contenedorLista.replaceChildren(aviso);
       }
     }
 
