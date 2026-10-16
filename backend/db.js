@@ -3,10 +3,10 @@ const mysql = require("mysql2");
 
 //Configuración de la conexión de la BD
 const host = process.env.DB_HOST || "localhost";
-const port = Number(process.env.DB_PORT) || 3307;
-const user = process.env.DB_USER || "root"
-const password = process.env.DB_PASSWORD ||  ""
-const database = process.env.DB_NAME || "tienda"
+const port = Number(process.env.DB_PORT) || 3306;
+const user = process.env.DB_USER || "root";
+const password = process.env.DB_PASSWORD ||  "";
+const database = process.env.DB_NAME || "tienda";
 
 //Opcionessde configuración
 const configuracion = {
@@ -14,7 +14,7 @@ const configuracion = {
     port,
     user,
     password,
-    database
+    database,
 };
 
 
